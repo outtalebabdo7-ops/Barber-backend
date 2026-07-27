@@ -1,77 +1,135 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BarberGo Morocco 💈</title>
-  <style>
-    body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; text-align: center; }
-    .card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; }
-    button { background: #ff4757; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
-    button:active { background: #e84118; }
-    .price { color: #2ed573; font-weight: bold; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BarberGo Morocco 💈</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; margin: 0; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        input, select { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: #fff; font-size: 16px; }
+        button { background: #ff4757; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 95%; margin-top: 5px; font-size: 15px; }
+        button:active { background: #e84118; }
+        .btn-order { background: #2ed573; width: auto; padding: 6px 15px; margin-top: 0; }
+        .service-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
+        .price { color: #2ed573; font-weight: bold; }
+        #status { margin-top: 10px; font-size: 14px; color: #ffa500; }
+    </style>
 </head>
 <body>
 
-  <h1>💈 BarberGo Morocco</h1>
-  <p>أول تطبيق لحلاقة الرجال فـ المغرب</p>
+    <h1>💈 BarberGo Morocco</h1>
+    <p>أول تطبيق لحلاقة الرجال فـ المغرب</p>
 
-  <div class="card">
-    <h3>📍 التتبع المباشر (GPS)</h3>
-    <button onclick="sendLocation()">تحديد الموقع ديالي</button>
-    <p id="geo-status" style="font-size: 12px; color: #aaa;"></p>
-  </div>
+    <!-- 1. قسم تسجيل الدخول / الإيميل -->
+    <div class="card">
+        <h3>👤 حساب المستخدم</h3>
+        <input type="email" id="userEmail" placeholder="أدخل البريد الإلكتروني (Gmail)..." required>
+        <select id="userRole">
+            <option value="client">زبون (كليان)</option>
+            <option value="barber">حلاق (Barber)</option>
+        </select>
+    </div>
 
-  <div class="card">
-    <h3>✂️ الخدمات والأسعار</h3>
-    <div id="services-list">جاري تحميل الخدمات...</div>
-  </div>
+    <!-- 2. قسم الموقع الجغرافي -->
+    <div class="card">
+        <h3>📍 التتبع المباشر (GPS)</h3>
+        <button onclick="sendLocation()">تحديث الموقع ديالي</button>
+        <p id="status">لم يتم تحديد الموقع بعد</p>
+    </div>
 
-  <script>
-    const API_URL = 'https://barber-backend-nu.vercel.app';
+    <!-- 3. قسم الخدمات وطلب الحلاقة -->
+    <div class="card">
+        <h3>✂️ اختيار الخدمة وطلب حلاق</h3>
+        <div id="services-list">جاري تحميل الخدمات...</div>
+    </div>
 
-    // 1. جلب الخدمات من السيرفر فـ Vercel
-    async function loadServices() {
-      try {
-        const res = await fetch(`${API_URL}/api/services`);
-        const data = await res.json();
-        let html = '';
-        data.forEach(s => {
-          html += `<div style="margin: 8px 0;"><b>${s.name}</b> - <span class="price">${s.price} DH</span></div>`;
-        });
-        document.getElementById('services-list').innerHTML = html;
-      } catch (err) {
-        document.getElementById('services-list').innerHTML = 'تعذر جلب الخدمات';
-      }
-    }
+    <script>
+        const API_URL = window.location.origin;
 
-    // 2. إرسال الموقع المباشر للسيرفر
-    function sendLocation() {
-      const status = document.getElementById('geo-status');
-      if (!navigator.geolocation) {
-        status.innerText = 'الـ GPS غير مدعوم فـ متصفحك';
-        return;
-      }
-      status.innerText = 'جاري تحديد الموقع...';
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        status.innerText = `الموقع: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        
-        // إرسال البيانات للـ Backend
-        await fetch(`${API_URL}/api/location/update`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'test@user.com', latitude: lat, longitude: lng })
-        });
-      }, () => {
-        status.innerText = 'فشل تحديد الموقع، تأكد من تشغيل الـ GPS';
-      });
-    }
+        // جلب قائمة الخدمات من الباكإند
+        async function loadServices() {
+            try {
+                const res = await fetch(`${API_URL}/api/services`);
+                const services = await res.json();
+                const container = document.getElementById('services-list');
+                container.innerHTML = '';
 
-    // تحميل الخدمات أول ما تفتح الصفحة
-    loadServices();
-  </script>
+                services.forEach(s => {
+                    container.innerHTML += `
+                        <div class="service-item">
+                            <div>
+                                <strong>${s.name}</strong> - <span class="price">${s.price} DH</span>
+                            </div>
+                            <button class="btn-order" onclick="createOrder('${s.name}', ${s.price})">طلب</button>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                document.getElementById('services-list').innerText = 'فشل جلب الخدمات';
+            }
+        }
+
+        // إرسال الإحداثيات والإيميل للباكإند
+        function sendLocation() {
+            const email = document.getElementById('userEmail').value;
+            const status = document.getElementById('status');
+
+            if (!email) {
+                alert('عفاك اكتب الإيميل ديالك الأول!');
+                return;
+            }
+
+            status.innerText = "جاري جلب الموقع...";
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                status.innerText = `الموقع: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+                await fetch(`${API_URL}/api/location/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, latitude, longitude })
+                });
+
+                alert('تم تحديث موقعك فـ السيرفر بنجاح! 🎯');
+            }, () => {
+                status.innerText = "تعذر الحصول على الموقع. تأكد من تفعيل GPS.";
+            });
+        }
+
+        // إرسال طلب حلاقة
+        async function createOrder(serviceName, price) {
+            const email = document.getElementById('userEmail').value;
+            if (!email) {
+                alert('عفاك اكتب الإيميل ديالك الفوق قبل ما تطلب!');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+
+                const res = await fetch(`${API_URL}/api/orders/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientEmail: email,
+                        serviceName,
+                        price,
+                        latitude,
+                        longitude
+                    })
+                });
+
+                const data = await res.json();
+                alert(data.message);
+            }, () => {
+                alert('خاص تفعل الـ GPS باش نحددوا أقرب حلاق ليك!');
+            });
+        }
+
+        loadServices();
+    </script>
 </body>
 </html>
