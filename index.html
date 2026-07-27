@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarberGo Morocco 💈</title>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; padding: 20px; text-align: center; }
+    .card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #333; }
+    button { background: #ff4757; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 10px; }
+    button:active { background: #e84118; }
+    .price { color: #2ed573; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h1>💈 BarberGo Morocco</h1>
+  <p>أول تطبيق لحلاقة الرجال فـ المغرب</p>
+
+  <div class="card">
+    <h3>📍 التتبع المباشر (GPS)</h3>
+    <button onclick="sendLocation()">تحديد الموقع ديالي</button>
+    <p id="geo-status" style="font-size: 12px; color: #aaa;"></p>
+  </div>
+
+  <div class="card">
+    <h3>✂️ الخدمات والأسعار</h3>
+    <div id="services-list">جاري تحميل الخدمات...</div>
+  </div>
+
+  <script>
+    const API_URL = 'https://barber-backend-nu.vercel.app';
+
+    // 1. جلب الخدمات من السيرفر فـ Vercel
+    async function loadServices() {
+      try {
+        const res = await fetch(`${API_URL}/api/services`);
+        const data = await res.json();
+        let html = '';
+        data.forEach(s => {
+          html += `<div style="margin: 8px 0;"><b>${s.name}</b> - <span class="price">${s.price} DH</span></div>`;
+        });
+        document.getElementById('services-list').innerHTML = html;
+      } catch (err) {
+        document.getElementById('services-list').innerHTML = 'تعذر جلب الخدمات';
+      }
+    }
+
+    // 2. إرسال الموقع المباشر للسيرفر
+    function sendLocation() {
+      const status = document.getElementById('geo-status');
+      if (!navigator.geolocation) {
+        status.innerText = 'الـ GPS غير مدعوم فـ متصفحك';
+        return;
+      }
+      status.innerText = 'جاري تحديد الموقع...';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        status.innerText = `الموقع: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        
+        // إرسال البيانات للـ Backend
+        await fetch(`${API_URL}/api/location/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@user.com', latitude: lat, longitude: lng })
+        });
+      }, () => {
+        status.innerText = 'فشل تحديد الموقع، تأكد من تشغيل الـ GPS';
+      });
+    }
+
+    // تحميل الخدمات أول ما تفتح الصفحة
+    loadServices();
+  </script>
+</body>
+</html>
